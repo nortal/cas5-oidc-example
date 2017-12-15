@@ -1,0 +1,28 @@
+apply from: 'https://dl.bintray.com/scalding/generic/waroverlay.gradle'
+
+repositories {
+    jcenter()
+    maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
+    maven { url 'https://build.shibboleth.net/nexus/content/repositories/releases/' }
+}
+
+dependencies {
+	//compile "org.apereo.cas:cas-server-support-json-service-registry:${project.'cas.version'}"
+	compile "org.apereo.cas:cas-server-support-jpa-service-registry:${project.'cas.version'}"
+	compile "org.apereo.cas:cas-server-support-jdbc-drivers:${project.'cas.version'}"
+    compile "org.apereo.cas:cas-management-webapp:${project.'cas.version'}@war"
+}
+
+war {
+    baseName = 'cas-management'
+    includeWarJars = true
+    entryCompression = ZipEntryCompression.STORED
+}
+
+task explodeWar(type: Copy, group: "build", description: "Explodes the cas-management.war") {
+    doLast {
+        from zipTree(project.war.outputs.files.singleFile)
+        into "${buildDir}/cas-management"
+        println "CAS web application artifact exploded into [cas-management/build/cas-management]"
+    }
+}

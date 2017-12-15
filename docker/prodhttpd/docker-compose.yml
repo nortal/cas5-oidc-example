@@ -1,0 +1,29 @@
+version: '3'
+services:
+  httpd:
+    image: httpd
+    volumes:
+      - ./httpd.conf:/usr/local/apache2/conf/httpd.conf
+      - ./httpd-ssl.conf:/usr/local/apache2/conf/extra/httpd-ssl.conf
+      - ./server.crt:/usr/local/apache2/conf/server.crt
+      - ./server.key:/usr/local/apache2/conf/server.key
+    ports:
+      - 443:443 
+  cas:
+    image: tomcat 
+    volumes:
+      - ./wars/cas.war:/usr/local/tomcat/webapps/cas.war
+      - ./config:/etc/cas/config 
+    expose:
+      - "8009"
+  casmg:
+    image: tomcat 
+    volumes:
+      - ./wars/cas-management.war:/usr/local/tomcat/webapps/cas-management.war
+      - ./config:/etc/cas/config 
+    expose:
+      - "8009"
+  hsqldb:
+    image: datagrip/hsqldb
+    expose:
+      - "9001"

@@ -1,0 +1,30 @@
+version: '3'
+services:
+  cas:
+    image: tomcat 
+    volumes:
+      - ../../cas/build/libs/cas.war:/usr/local/tomcat/webapps/cas.war
+      - ../../config/castom:/etc/cas/config 
+      - ./setenv.sh:/usr/local/tomcat/bin/setenv.sh     
+    ports:
+      - 8444:8080
+      - 5005:8011
+    expose:
+      - "8009"
+    command: catalina.sh jpda run
+  casmg:
+    image: tomcat 
+    volumes:
+      - ../../cas-management/build/libs/cas-management.war:/usr/local/tomcat/webapps/cas-management.war
+      - ../../config/castom:/etc/cas/config
+      - ./setenv.sh:/usr/local/tomcat/bin/setenv.sh      
+    ports:
+      - 8445:8080
+      - 5006:8011
+    expose:
+      - "8009"
+    command: catalina.sh jpda run
+  hsqldb:
+    image: datagrip/hsqldb
+    expose:
+      - "9001"

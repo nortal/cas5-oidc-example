@@ -1,0 +1,99 @@
+apply plugin: 'war'
+
+version = "1.0"
+
+repositories {
+    jcenter()
+    maven { url 'https://build.shibboleth.net/nexus/content/repositories/releases/' }
+}
+
+configurations {
+	manifestSource
+	compile.extendsFrom(manifestSource)
+}
+
+dependencies {
+ 	providedCompile 'javax.servlet:javax.servlet-api:4.0.0'
+    compile "org.apereo.cas:cas-server-support-jpa-service-registry:${project.'cas.version'}"
+    compile "org.apereo.cas:cas-server-support-jdbc-drivers:${project.'cas.version'}"
+    compile "org.apereo.cas:cas-server-support-oidc:${project.'cas.version'}"
+    manifestSource "org.apereo.cas:cas-server-webapp:${project.'cas.version'}"
+}
+
+project.ext {
+	versionDir = new File(buildDir, "version")
+	applicationYml = file("src/main/resources/default-mta-properties.yml")
+}
+/*
+task versionToProperties {
+	inputs.property("version", null)
+	inputs.file(applicationYml)
+	outputs.dir(versionDir)
+	doLast {
+		versionDir.mkdir()
+		new File(versionDir, "application.yml").text =  applicationYml.text + "\n\nmta.cas.version: ${version}"
+	}
+}
+*/
+war {
+ 	baseName 'cas'
+ 	archiveName 'cas.war'
+	duplicatesStrategy = 'exclude'
+    /*
+    manifest {
+        from manifestFile()
+    }
+    webInf {
+    	from versionToProperties.outputs
+    	into "classes"
+    }
+	*/
+	// doFirst postpones iteration on overlay configuration and therefore its resolution,
+	// so that it can be changed in other files.
+	doFirst {
+		classpath = classpath.filter({!it.name.endsWith('.war')})
+		println('^');
+		//Pull manifestSource last after any transitive wars.
+		{x,y -> x - y + y}(configurations.runtime, configurations.manifestSource).filter({it.name.endsWith(".war")}).each {
+			from zipTree(it).matching { exclude "**/*.jar" }
+			println('* ' + it.name)
+		}
+		println(' ');
+	}
+}
+
+task explodeWar(type: Copy) {
+    group = "build"
+    description = "Explode the cas.war"
+    from zipTree(project.war.outputs.files.singleFile)
+    into "${buildDir}/cas"
+    doLast {
+        println "CAS web application artifact exploded into [cas/build/cas]"
+    }
+}
+
+File manifestFile() {
+    def warfile = configurations.manifestSource.asFileTree.matching {
+        include '**/*.war'
+    }
+    def manifest = zipTree(warfile.singleFile).matching {
+        include '**/*.MF'
+    }
+    def dst = new File("${project.rootDir}/etc/cas/MANIFEST.MF")
+    dst.delete()
+    dst << manifest.singleFile.text
+    return dst
+}
+
+task generateKeys {
+  group = 'CAS'
+  description = 'generate keys for CAS. These keys can be added to your application.properties file'
+  doLast {
+    println 'Generating keys for CAS...'
+    ['cas.tgc.encryptionKey': 256, 'cas.tgc.signingKey': 512, 'cas.webflow.encryption.key': 96, 'cas.webflow.signing.key': 512].each { key, size ->
+        def octetKey = OctJwkGenerator.generateJwk(size)
+        def params = octetKey.toParams(JsonWebKey.OutputControlLevel.INCLUDE_SYMMETRIC)
+        println "${key}=${params.get('k')}"
+    }
+  }
+}

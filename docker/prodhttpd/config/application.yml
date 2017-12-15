@@ -1,0 +1,11 @@
+cas:
+  server:
+    name: http://myserver
+    prefix: http://myserver/cas
+
+cas.serviceRegistry:
+  json.location: file:///etc/cas/config/services
+  jpa.url: jdbc:hsqldb:hsql://hsqldb/test
+  initFromJson: true
+  
+cas.authn.oidc.claims: org,sub,name,preferred_username,family_name

@@ -1,0 +1,20 @@
+version: '3'
+services:
+  cas:
+    image: tomcat 
+    volumes:
+      - ./wars/cas.war:/usr/local/tomcat/webapps/cas.war
+      - ./config:/etc/cas/config 
+    ports:
+      - 8209:8009
+  casmg:
+    image: tomcat 
+    volumes:
+      - ./wars/cas-management.war:/usr/local/tomcat/webapps/cas-management.war
+      - ./config:/etc/cas/config 
+    ports:
+      - 8219:8009
+  hsqldb:
+    image: datagrip/hsqldb
+    expose:
+      - "9001"
